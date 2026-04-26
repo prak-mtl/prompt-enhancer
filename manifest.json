@@ -22,8 +22,18 @@
       "js": ["content.js"]
     }
   ],
+  "icons": {
+    "16":  "icons/favicon_dark.png",
+    "48":  "icons/favicon_dark.png",
+    "128": "icons/favicon_dark.png"
+  },
   "action": {
     "default_title": "Configure Prompt Enhancer",
-    "default_popup": "popup.html"
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16":  "icons/favicon_dark.png",
+      "48":  "icons/favicon_dark.png",
+      "128": "icons/favicon_dark.png"
+    }
   }
 }

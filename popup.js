@@ -1,10 +1,39 @@
 const OLLAMA_BASE = 'http://127.0.0.1:11434';
+
+// ─── Icon theme helpers (popup has DOM/canvas access) ──────────────────────
+
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+async function setIconForTheme(isDark) {
+  try {
+    const src = isDark ? 'icons/favicon_light.png' : 'icons/favicon_dark.png';
+    const img = await loadImage(src);
+    const size = 128;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, size, size);
+    await chrome.action.setIcon({ imageData: ctx.getImageData(0, 0, size, size) });
+  } catch { /* keep existing icon if anything fails */ }
+}
 const TARGET_MODEL = 'llama3.2:3b';
 const SETUP_KEY = 'setupComplete';
 
 // ─── Boot ──────────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', async () => {
+  // Popup has direct access to chrome.action — update icon immediately on open.
+  // Uses ImageData (not path) so non-square PNGs are drawn square and path
+  // resolution issues in popup contexts are avoided.
+  setIconForTheme(window.matchMedia('(prefers-color-scheme: dark)').matches);
   const { setupComplete } = await chrome.storage.local.get(SETUP_KEY);
   if (setupComplete) {
     showMainView();

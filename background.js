@@ -1,3 +1,19 @@
+// ─── Icon theme helper (service worker — uses OffscreenCanvas, no DOM) ────
+
+async function setIconForTheme(isDark) {
+  const path = isDark ? 'icons/favicon_light.png' : 'icons/favicon_dark.png';
+  const url = chrome.runtime.getURL(path);
+  const blob = await fetch(url).then(r => r.blob());
+  const bitmap = await createImageBitmap(blob);
+  const size = 128;
+  const canvas = new OffscreenCanvas(size, size);
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(bitmap, 0, 0, size, size);
+  await chrome.action.setIcon({ imageData: ctx.getImageData(0, 0, size, size) });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 chrome.runtime.onInstalled.addListener(async ({ reason }) => {
   if (reason === 'install') {
     await chrome.storage.local.set({ setupComplete: false });
@@ -10,6 +26,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       .then(enhancedText => sendResponse({ success: true, text: enhancedText }))
       .catch(error => sendResponse({ success: false, error: error.message }));
     return true;
+  }
+
+  if (request.action === 'update_icon_theme') {
+    setIconForTheme(request.isDark).catch(() => {});
   }
 });
 

@@ -308,3 +308,14 @@ async function checkEnabledStatus() {
 }
 
 init().catch(teardown);
+
+// Sync the toolbar icon with the OS color scheme.
+// Content scripts can't call chrome.action directly, so we message the background.
+function syncIconToTheme() {
+  if (!isContextValid()) return;
+  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  chrome.runtime.sendMessage({ action: 'update_icon_theme', isDark }).catch(() => {});
+}
+
+syncIconToTheme();
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', syncIconToTheme);
