@@ -2,6 +2,8 @@
 
 A Chrome extension that supercharges your prompts before you send them — running entirely on your local machine via [Ollama](https://ollama.com). No API keys, no cloud, no data leaving your device.
 
+<img width="380" height="371" alt="AI prompt enhancer" src="https://github.com/user-attachments/assets/3d28ddc4-e9ec-4931-98ea-e258794cd3fb" />
+
 ---
 
 ## How it works
