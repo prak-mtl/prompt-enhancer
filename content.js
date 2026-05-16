@@ -17,7 +17,7 @@ function teardown() {
     activeElement = null;
 }
 
-const TONES = ["Professional", "Casual", "Friendly", "Polite", "Technical", "Creative", "Emojified"];
+const TONES = ["Basic", "Professional", "Casual", "Friendly", "Polite", "Technical", "Creative", "Emojified"];
 
 async function init() {
     createEnhanceButton();
@@ -291,6 +291,8 @@ async function checkEnabledStatus() {
         if (isHidden) {
             if (enhanceButton) enhanceButton.style.display = 'none';
             if (toneMenu) toneMenu.style.display = 'none';
+            detachResizeObserver();
+            activeElement = null;
             return false;
         }
         // Re-enabled: restore button if we already have an active element,

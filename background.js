@@ -34,7 +34,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 async function handlePromptEnhancement(originalText, tone) {
-  const systemInstruction = `
+  const systemInstruction = tone === "Basic"
+    ? `You are a light-touch editor. Fix grammar, spelling, and clarity issues in the user's input. Keep the wording, tone, and length as close to the original as possible. Do NOT restructure the prompt, do NOT add sections, headings, examples, role definitions, or extra context. Do NOT answer the prompt — only return the corrected version of the user's text.`
+    : `
     Act as an expert Prompt Architect.
     Your task is to transform a user's raw, unstructured input into a high-quality, structured AI prompt.
 
