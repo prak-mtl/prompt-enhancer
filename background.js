@@ -1,3 +1,83 @@
+// ─── API config (single source of truth, mirrored in popup.js) ────────────
+
+const DEFAULT_API_ENDPOINT = 'http://127.0.0.1:11434';
+const DEFAULT_API_MODEL    = 'llama3.2:3b';
+
+async function getApiConfig() {
+  const {
+    apiEndpoint = DEFAULT_API_ENDPOINT,
+    apiUsername = '',
+    apiPassword = '',
+    apiModel    = DEFAULT_API_MODEL,
+  } = await chrome.storage.local.get(['apiEndpoint', 'apiUsername', 'apiPassword', 'apiModel']);
+
+  return {
+    endpoint: apiEndpoint.replace(/\/+$/, ''),
+    username: apiUsername,
+    password: apiPassword,
+    model: apiModel,
+  };
+}
+
+function buildAuthHeaders(cfg) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (cfg.username || cfg.password) {
+    headers['Authorization'] = 'Basic ' + btoa(`${cfg.username}:${cfg.password}`);
+  }
+  return headers;
+}
+
+// ─── Strip browser-only headers proxies often reject (Caddy/nginx WAFs) ───
+
+const API_HEADER_RULE_ID = 1001;
+
+async function updateApiHeaderRules() {
+  try {
+    const cfg = await getApiConfig();
+    let urlFilter = '||example.invalid^';
+    try {
+      const u = new URL(cfg.endpoint);
+      urlFilter = `||${u.host}^`;
+    } catch { /* keep no-op filter */ }
+
+    await chrome.declarativeNetRequest.updateDynamicRules({
+      removeRuleIds: [API_HEADER_RULE_ID],
+      addRules: [{
+        id: API_HEADER_RULE_ID,
+        priority: 1,
+        action: {
+          type: 'modifyHeaders',
+          requestHeaders: [
+            { header: 'origin',             operation: 'remove' },
+            { header: 'sec-fetch-mode',     operation: 'remove' },
+            { header: 'sec-fetch-site',     operation: 'remove' },
+            { header: 'sec-fetch-dest',     operation: 'remove' },
+            { header: 'sec-fetch-user',     operation: 'remove' },
+            { header: 'sec-ch-ua',          operation: 'remove' },
+            { header: 'sec-ch-ua-mobile',   operation: 'remove' },
+            { header: 'sec-ch-ua-platform', operation: 'remove' },
+          ],
+        },
+        condition: {
+          urlFilter,
+          resourceTypes: ['xmlhttprequest'],
+        },
+      }],
+    });
+    console.log('[prompt-enhancer] header-stripping rule installed for', urlFilter);
+  } catch (err) {
+    console.warn('[prompt-enhancer] updateApiHeaderRules failed:', err);
+  }
+}
+
+chrome.runtime.onStartup.addListener(updateApiHeaderRules);
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && changes.apiEndpoint) {
+    updateApiHeaderRules();
+  }
+});
+
 // ─── Icon theme helper (service worker — uses OffscreenCanvas, no DOM) ────
 
 async function setIconForTheme(isDark) {
@@ -18,6 +98,7 @@ chrome.runtime.onInstalled.addListener(async ({ reason }) => {
   if (reason === 'install') {
     await chrome.storage.local.set({ setupComplete: false });
   }
+  await updateApiHeaderRules();
 });
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -50,12 +131,26 @@ async function handlePromptEnhancement(originalText, tone) {
 
   const userPayload = `Tone: ${tone}. Input: ${originalText}`;
 
+  const cfg = await getApiConfig();
+  const url = `${cfg.endpoint}/api/chat`;
+  const headers = buildAuthHeaders(cfg);
+
+  // Diagnostic log (visible in chrome://extensions → service worker inspect)
+  console.log('[prompt-enhancer] POST', url, {
+    model: cfg.model,
+    hasAuth: !!headers.Authorization,
+    user: cfg.username,
+    passLen: cfg.password.length,
+  });
+
+  let response;
   try {
-    const response = await fetch('http://127.0.0.1:11434/api/chat', {
+    response = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
+      credentials: 'omit',
       body: JSON.stringify({
-        model: 'llama3.2:3b',
+        model: cfg.model,
         messages: [
           { role: 'system', content: systemInstruction },
           { role: 'user', content: userPayload },
@@ -64,12 +159,27 @@ async function handlePromptEnhancement(originalText, tone) {
         options: { temperature: 0.7 },
       }),
     });
+  } catch (err) {
+    console.error('[prompt-enhancer] fetch network failure:', err);
+    throw new Error('ollama_offline');
+  }
 
-    if (!response.ok) throw new Error(`Ollama Error: ${response.statusText}`);
-
+  if (response.ok) {
     const data = await response.json();
     return data.message.content.trim();
-  } catch (err) {
-    throw new Error(err instanceof TypeError ? 'ollama_offline' : 'enhancement_failed');
   }
+
+  // Non-OK — capture body for diagnostics
+  const bodyText = await response.text().catch(() => '');
+  console.error('[prompt-enhancer] non-OK from /api/chat', {
+    status: response.status,
+    statusText: response.statusText,
+    body: bodyText.slice(0, 400),
+    wwwAuth: response.headers.get('www-authenticate'),
+  });
+
+  if (response.status === 401 || response.status === 403) {
+    throw new Error('auth_failed');
+  }
+  throw new Error('enhancement_failed');
 }

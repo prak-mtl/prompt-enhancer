@@ -213,8 +213,9 @@ async function processEnhancement(tone) {
                     if (enhanceButton) enhanceButton.innerHTML = '✨ Enhance';
                 } else {
                     const isOffline = response?.error === 'ollama_offline';
+                    const isAuth    = response?.error === 'auth_failed';
                     if (enhanceButton) {
-                        enhanceButton.innerHTML = isOffline ? '⚠️ Ollama offline' : '⚠️ Failed — retry';
+                        enhanceButton.innerHTML = isAuth ? '⚠️ Auth error' : (isOffline ? '⚠️ Ollama offline' : '⚠️ Failed — retry');
                         setTimeout(() => {
                             try {
                                 if (enhanceButton) enhanceButton.innerHTML = '✨ Enhance';
