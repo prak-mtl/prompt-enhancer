@@ -1,7 +1,7 @@
 # "Use in Claude CLI" Panel — Design Spec
 
 **Date:** 2026-05-30
-**Status:** Approved (pending spec review)
+**Status:** Implemented — `cli/install-remote.sh`, `cli/install-remote.ps1`, and the popup `#cli-view` shipped on `feature/cli-install-panel`. Remote one-liners go live once merged to `main`.
 
 ## Goal
 
