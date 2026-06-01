@@ -394,6 +394,7 @@
     .cli-tab.active { background: #6366f1; color: #fff; border-color: #6366f1; }
 
     .cli-cmd-block { display: flex; align-items: stretch; gap: 8px; margin-bottom: 12px; }
+    .cli-cmd-block[hidden] { display: none; }  /* class display:flex would otherwise override the UA hidden rule */
     code.cli-cmd {
       flex: 1;
       font-family: 'SFMono-Regular', Consolas, monospace;
