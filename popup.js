@@ -105,11 +105,13 @@ function showSettingsView(returnTo) {
   clearSettingsStatus();
 }
 
-function showCliView() {
+function showCliView(returnTo = 'main') {
   document.getElementById('wizard-view').hidden = true;
   document.getElementById('main-view').hidden = true;
   document.getElementById('settings-view').hidden = true;
-  document.getElementById('cli-view').hidden = false;
+  const view = document.getElementById('cli-view');
+  view.hidden = false;
+  view.dataset.returnTo = returnTo;
   selectCliTab(detectDefaultOs());
 }
 
@@ -521,12 +523,23 @@ async function copyCliCommand(codeId, btn) {
 }
 
 function wireCliView() {
-  document.getElementById('open-cli-row').addEventListener('click', showCliView);
+  document.getElementById('open-cli-row').addEventListener('click', () => showCliView('main'));
+  document.getElementById('wizard-to-cli').addEventListener('click', (e) => {
+    e.preventDefault();
+    showCliView('wizard');
+  });
   document.getElementById('cli-tab-unix').addEventListener('click', () => selectCliTab('unix'));
   document.getElementById('cli-tab-win').addEventListener('click', () => selectCliTab('win'));
   document.getElementById('cli-copy-unix').addEventListener('click', (e) => copyCliCommand('cli-cmd-unix', e.currentTarget));
   document.getElementById('cli-copy-win').addEventListener('click', (e) => copyCliCommand('cli-cmd-win', e.currentTarget));
-  document.getElementById('cli-back').addEventListener('click', showMainView);
+  document.getElementById('cli-back').addEventListener('click', () => {
+    const returnTo = document.getElementById('cli-view').dataset.returnTo;
+    if (returnTo === 'wizard') {
+      showWizardView();
+    } else {
+      showMainView();
+    }
+  });
 }
 
 function populateSettingsFields() {

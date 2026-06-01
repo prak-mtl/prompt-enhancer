@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "AI Prompt Enhancer",
-  "version": "1.0.3",
-  "description": "Enhances user-written prompts in real-time. Supports a local Ollama install or a user-configured remote Ollama endpoint.",
+  "version": "1.0.4",
+  "description": "Enhance prompts in any text field — local or authenticated remote Ollama, plus an /enhance command for Claude Code.",
   "permissions": [
     "storage",
     "activeTab",
