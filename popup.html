@@ -374,6 +374,43 @@
     .row.row-clickable { cursor: pointer; transition: background 0.15s; }
     .row.row-clickable:hover { background: #fafafa; }
     .row-chevron { font-size: 13px; color: #9ca3af; }
+
+    /* ── CLI View ────────────────────────────── */
+    #cli-view { padding: 16px 18px 18px; }
+
+    .cli-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+    .cli-tab {
+      flex: 1;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 7px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      border: 1px solid #e5e7eb;
+      background: #fff;
+      color: #6b7280;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .cli-tab.active { background: #6366f1; color: #fff; border-color: #6366f1; }
+
+    .cli-cmd-block { display: flex; align-items: stretch; gap: 8px; margin-bottom: 12px; }
+    code.cli-cmd {
+      flex: 1;
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      background: #f3f4f6;
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      color: #374151;
+      word-break: break-all;
+      white-space: pre-wrap;
+      line-height: 1.5;
+    }
+    .cli-cmd-block .action-btn { flex-shrink: 0; align-self: flex-start; }
+
+    ol.cli-steps li { color: #6b7280; }
+
+    .cli-note { font-size: 11.5px; color: #6b7280; line-height: 1.5; margin-top: 10px; }
   </style>
 </head>
 <body>
@@ -492,6 +529,16 @@
       </div>
     </div>
 
+    <div class="section">
+      <div class="row row-clickable" id="open-cli-row">
+        <div class="row-info">
+          <span class="row-label">Use in Claude CLI</span>
+          <span class="row-desc">Run /enhance in Claude Code</span>
+        </div>
+        <span class="row-chevron">›</span>
+      </div>
+    </div>
+
     <div class="footer">
       <span class="footer-ver">v1.0</span>
       <span class="status-badge off" id="statusBadge">
@@ -536,6 +583,42 @@
     <div class="settings-actions">
       <button class="action-btn" id="settings-reset">Reset to Local</button>
       <button class="action-btn" id="settings-back">Back</button>
+    </div>
+  </div>
+
+  <!-- ═══ CLI VIEW ══════════════════════════════════════════════════════════ -->
+  <div id="cli-view" hidden>
+    <p class="wizard-subtitle">Run the Prompt Enhancer inside Claude Code with one command.</p>
+
+    <div class="cli-tabs">
+      <button class="cli-tab active" id="cli-tab-unix">macOS / Linux</button>
+      <button class="cli-tab" id="cli-tab-win">Windows</button>
+    </div>
+
+    <div class="cli-cmd-block" id="cli-cmd-unix-block">
+      <code class="cli-cmd" id="cli-cmd-unix">curl -fsSL https://raw.githubusercontent.com/prak-mtl/prompt-enhancer/main/cli/install-remote.sh | bash</code>
+      <button class="action-btn" id="cli-copy-unix">Copy</button>
+    </div>
+
+    <div class="cli-cmd-block" id="cli-cmd-win-block" hidden>
+      <code class="cli-cmd" id="cli-cmd-win">irm https://raw.githubusercontent.com/prak-mtl/prompt-enhancer/main/cli/install-remote.ps1 | iex</code>
+      <button class="action-btn" id="cli-copy-win">Copy</button>
+    </div>
+
+    <ol class="setup-steps cli-steps">
+      <li>Paste the command in your terminal and run it.</li>
+      <li>Restart Claude Code (or start a new session).</li>
+      <li>Type <code class="cmd">/enhance &lt;your prompt&gt;</code>.</li>
+    </ol>
+
+    <p class="cli-note" id="cli-note-win" hidden>
+      Windows: requires Git Bash (or WSL) + <code class="cmd">jq</code> to run, since the engine is a bash script.
+    </p>
+    <p class="cli-note">Ollama is already covered — the CLI uses the same local Ollama this extension does.</p>
+
+    <div class="settings-actions">
+      <a class="action-link" id="cli-view-script" href="#" target="_blank" rel="noopener">View script</a>
+      <button class="action-btn" id="cli-back">Back</button>
     </div>
   </div>
 
