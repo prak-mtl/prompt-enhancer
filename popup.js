@@ -65,6 +65,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setIconForTheme(window.matchMedia('(prefers-color-scheme: dark)').matches);
   await loadConfig();
   wireSettingsView();
+  wireCliView();
 
   const { setupComplete } = await chrome.storage.local.get(SETUP_KEY);
   if (setupComplete) {
@@ -82,23 +83,34 @@ function showWizardView() {
   document.getElementById('wizard-view').hidden = false;
   document.getElementById('main-view').hidden = true;
   document.getElementById('settings-view').hidden = true;
+  document.getElementById('cli-view').hidden = true;
 }
 
 function showMainView() {
   document.getElementById('wizard-view').hidden = true;
   document.getElementById('main-view').hidden = false;
   document.getElementById('settings-view').hidden = true;
+  document.getElementById('cli-view').hidden = true;
   updateSettingsSummary();
 }
 
 function showSettingsView(returnTo) {
   document.getElementById('wizard-view').hidden = true;
   document.getElementById('main-view').hidden = true;
+  document.getElementById('cli-view').hidden = true;
   const view = document.getElementById('settings-view');
   view.hidden = false;
   view.dataset.returnTo = returnTo;
   populateSettingsFields();
   clearSettingsStatus();
+}
+
+function showCliView() {
+  document.getElementById('wizard-view').hidden = true;
+  document.getElementById('main-view').hidden = true;
+  document.getElementById('settings-view').hidden = true;
+  document.getElementById('cli-view').hidden = false;
+  selectCliTab(detectDefaultOs());
 }
 
 // ─── Wizard runner ─────────────────────────────────────────────────────────
@@ -468,6 +480,53 @@ function wireSettingsView() {
       }
     }, 400);
   });
+}
+
+// ─── CLI view ───────────────────────────────────────────────────────────────
+
+const CLI_RAW_BASE = 'https://raw.githubusercontent.com/prak-mtl/prompt-enhancer/main/cli';
+const CLI_SCRIPT_URL = {
+  unix: `${CLI_RAW_BASE}/install-remote.sh`,
+  win:  `${CLI_RAW_BASE}/install-remote.ps1`,
+};
+
+function detectDefaultOs() {
+  const platform =
+    (navigator.userAgentData && navigator.userAgentData.platform) ||
+    navigator.platform ||
+    navigator.userAgent ||
+    '';
+  return /win/i.test(platform) ? 'win' : 'unix';
+}
+
+function selectCliTab(os) {
+  const isWin = os === 'win';
+  document.getElementById('cli-tab-win').classList.toggle('active', isWin);
+  document.getElementById('cli-tab-unix').classList.toggle('active', !isWin);
+  document.getElementById('cli-cmd-win-block').hidden = !isWin;
+  document.getElementById('cli-cmd-unix-block').hidden = isWin;
+  document.getElementById('cli-note-win').hidden = !isWin;
+  document.getElementById('cli-view-script').href = isWin ? CLI_SCRIPT_URL.win : CLI_SCRIPT_URL.unix;
+}
+
+async function copyCliCommand(codeId, btn) {
+  const text = document.getElementById(codeId).textContent;
+  try {
+    await navigator.clipboard.writeText(text);
+    btn.textContent = 'Copied ✓';
+  } catch {
+    btn.textContent = 'Copy failed';
+  }
+  setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+}
+
+function wireCliView() {
+  document.getElementById('open-cli-row').addEventListener('click', showCliView);
+  document.getElementById('cli-tab-unix').addEventListener('click', () => selectCliTab('unix'));
+  document.getElementById('cli-tab-win').addEventListener('click', () => selectCliTab('win'));
+  document.getElementById('cli-copy-unix').addEventListener('click', (e) => copyCliCommand('cli-cmd-unix', e.currentTarget));
+  document.getElementById('cli-copy-win').addEventListener('click', (e) => copyCliCommand('cli-cmd-win', e.currentTarget));
+  document.getElementById('cli-back').addEventListener('click', showMainView);
 }
 
 function populateSettingsFields() {
